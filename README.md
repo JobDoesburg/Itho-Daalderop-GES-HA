@@ -5,12 +5,12 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/custom-components/hacs"><img src="https://img.shields.io/badge/HACS-Custom-orange.svg" alt="HACS"></a>
-  <a href="https://github.com/marinuz/Itho-Daalderop-GES-HA/releases"><img src="https://img.shields.io/github/release/marinuz/Itho-Daalderop-GES-HA.svg" alt="GitHub Release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/marinuz/Itho-Daalderop-GES-HA.svg" alt="License"></a>
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-orange.svg" alt="HACS"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/JobDoesburg/Itho-Daalderop-GES-HA.svg" alt="License"></a>
 </p>
 
-Professionele Home Assistant integratie voor Itho Daalderop boiler met Cloud Connect functionaliteit.
+Home Assistant integratie voor Itho Daalderop boilers die via de Climate
+Connect app (Cloud Connect API) worden bediend.
 
 ## 🏷️ Ondersteunde apparaten
 
@@ -18,146 +18,148 @@ De integratie herkent het boilertype aan de eerste drie letters van het serienum
 
 | Serienummer | Type | Ondersteuning |
 |---|---|---|
-| `VPR...` | Green Energy Smartboiler® | Volledig: alle modi, temperatuurinstelling, PV-functie |
-| `GRB...` | Smartboiler (met Smart-upp module) | Modi SmartControl/Schedule/Holiday, Boost, monitoring. Geen PV-functie of vrije temperatuurinstelling (de boiler regelt dit zelflerend; Boost verwarmt eenmalig naar 85°C) |
-
-**Bekende beperking (alle typen):** de Boost-knop werkt momenteel niet.
-De API weigert de aanroep (`BoostBoilerRequestContract` validatiefout) — het
-verwachte request-formaat is nog onbekend. Wie het netwerkverkeer van de
-Climate Connect app kan opvangen (mitmproxy) kan dit oplossen; zie issue #1.
-
-**Let op:** modus-wijzigingen zijn *eventually consistent*: de API bevestigt
-direct, maar `GetDeviceMode` geeft tot ~30 seconden de oude modus terug.
-De integratie werkt hier omheen met een optimistische update.
+| `VPR...` | Green Energy Smartboiler® | Volledig: 4 modi, temperatuurinstelling, PV-functie |
+| `GRB...` | Smartboiler (met Smart-upp module) | Modi SmartControl/Schedule/Holiday en monitoring. Geen PV-functie of vrije temperatuurinstelling (de boiler regelt dit zelflerend) |
 
 Onbekende serienummers krijgen het volledige (VPR) profiel. Werkt iets niet
 op jouw boilertype? Download dan de diagnostics (Instellingen → Apparaten &
 diensten → Itho Daalderop → Diagnostics downloaden) of draai
-`tests/probe_device.py` en open een issue met de output — daarmee kan het
-profiel voor jouw type verfijnd worden.
+`tests/probe_device.py` en open een
+[issue](https://github.com/JobDoesburg/Itho-Daalderop-GES-HA/issues) met de
+output — daarmee kan het profiel voor jouw type verfijnd worden.
+
+### Bekende beperkingen
+
+- **Boost werkt momenteel niet** (alle typen): de API weigert de aanroep
+  (`BoostBoilerRequestContract` validatiefout) — het verwachte
+  request-formaat is nog onbekend. Wie het netwerkverkeer van de Climate
+  Connect app kan opvangen (bijv. met mitmproxy) kan dit oplossen.
+- **Modus-wijzigingen zijn *eventually consistent***: de API bevestigt
+  direct, maar geeft tot ~30 seconden de oude modus terug. De integratie
+  werkt hier omheen met een optimistische update; de boiler zelf volgt
+  binnen ~30 seconden.
 
 ## ✨ Features
 
-### 🎛️ **Volledige Controle**
-- ✅ **Water Heater Entity** voor complete boiler besturing
-- ✅ **Temperatuur regeling** (10-75°C) met real-time feedback
-- ✅ **4 Bedrijfsmodi**: SmartControl, Schedule, Continuous, Holiday
-- ✅ **Boost functie** met status indicator (schakelaar)
+- **Bedrijfsmodus** instelbaar via select entity (SmartControl, Schedule,
+  Continuous*, Holiday) — *Continuous alleen op VPR
+- **Vakantiemodus** als aparte schakelaar
+- **Temperatuurinstelling** (10–75°C, alleen VPR)
+- **PV (zonnepanelen) optimalisatie** (alleen VPR): PV-functie aan/uit,
+  start/stop limieten, PV doeltemperatuur, live PV monitoring
+- **Uitgebreide monitoring**: vulgraad, vermogen, energieverbruik en
+  -besparing, doeltemperatuur, legionella preventie timer,
+  online/offline status, firmware versie
+- **Token-based authenticatie** (geen wachtwoord in HA); token is 1 jaar
+  geldig, daarna opnieuw inloggen
+- **Diagnostics ondersteuning** voor het debuggen van nieuwe boilertypes
+- **HACS compatible**
 
-### ☀️ **PV (Zonnepanelen) Optimalisatie**
-- ✅ **PV Functie aan/uit** schakelbaar
-- ✅ **Instelbare start/stop limieten** voor PV overschot (kW)
-- ✅ **PV doeltemperatuur** configureerbaar (°C)
-- ✅ **Live PV monitoring**: verbruik, productie en netto vermogen
+## Installatie
 
-### 📊 **Uitgebreide Monitoring** (16+ sensors)
-- ✅ Boiler inhoud percentage
-- ✅ Water temperatuur live
-- ✅ Stroomverbruik actueel (W)
-- ✅ Energie verbruik totaal (kWh)
-- ✅ Energie besparing (kWh)
-- ✅ Legionella preventie timer
-- ✅ Software versie
-- ✅ Online/Offline status
-
-### 🔒 **Betrouwbaar & Veilig**
-- ✅ **Token-based authenticatie** (geen wachtwoord in HA)
-- ✅ **1-jaar geldigheid** met automatische refresh
-- ✅ **Retry logic** voor netwerkfouten
-- ✅ **Rate limiting** om API te beschermen
-- ✅ **HACS compatible**  
-
-## Installatie via HACS
-
-Zie de [volledige installatie gids](docs/HACS_INSTALL_GUIDE.md) voor gedetailleerde instructies.
-
-### Quick Start
-
-#### Optie 1: Custom Repository (Aanbevolen voor testing)
+### Optie 1: via HACS (aanbevolen)
 
 1. Open **HACS** in Home Assistant
-2. Klik op **Integrations**
-3. Klik rechtsbovenin op de **︙** (drie puntjes)
-4. Selecteer **Custom repositories**
-5. Voeg toe:
-   - **Repository**: `https://github.com/marinuz/Itho-Daalderop-GES-HA.git`
+2. Klik rechtsbovenin op de **︙** (drie puntjes) → **Custom repositories**
+3. Voeg toe:
+   - **Repository**: `https://github.com/JobDoesburg/Itho-Daalderop-GES-HA`
    - **Category**: `Integration`
-6. Klik op **Add**
-7. Zoek naar "Itho Daalderop" en klik op **Download**
-8. Herstart Home Assistant
+4. Zoek naar "Itho Daalderop" en klik op **Download**
+5. Herstart Home Assistant
 
-### Optie 2: Handmatige installatie
+### Optie 2: handmatig
 
 1. Download deze repository
-2. Kopieer de `custom_components/itho_daalderop` folder naar je Home Assistant `custom_components` directory
+2. Kopieer de map `custom_components/itho_daalderop` naar de
+   `custom_components` directory van je Home Assistant configuratie
 3. Herstart Home Assistant
 
 ## Configuratie
 
 1. Ga naar **Instellingen** → **Apparaten & Services**
-2. Klik op **+ Integratie toevoegen**
-3. Zoek naar **Itho Daalderop**
-4. Voer het **serienummer** van je boiler in (bijv. `VPR242600095`)
-5. Er opent een browser naar de Itho login pagina
-6. Log in met je **Itho Daalderop account**
-7. Na inloggen krijg je een foutmelding - dit is normaal!
-8. Open **Browser Console** (F12)
-9. Kopieer de URL die begint met `climateconnect://login?token=...`
-10. Plak deze in Home Assistant
-11. Klaar! Je boiler is nu beschikbaar in HA
+2. Klik op **+ Integratie toevoegen** en zoek naar **Itho Daalderop**
+3. Voer het **serienummer** van je boiler in (bijv. `VPR242600095` of
+   `GRB240230157`)
+4. Klik op de login-link en log in met je **Itho Daalderop account**
+5. Na inloggen probeert de browser `climateconnect://login?token=...` te
+   openen en toont een foutmelding — dit is normaal!
+6. Kopieer uit de adresbalk (of browser console, F12) de token: alles na
+   `token=`, beginnend met `eyJ` en met precies twee punten erin
+7. Plak deze in Home Assistant — klaar!
 
 ## Entiteiten
 
-### 🌡️ Water Heater
-**Hoofdentiteit voor boiler besturing**
-- **Temperatuur**: 10-75°C instelbaar
-- **Modi**: 
-  - `Eco` (SmartControl) - Slimme automatische modus
-  - `Auto` (Schedule) - Volgens weekschema
-  - `Heat Pump` (Continuous) - Altijd aan
-  - `Off` (Holiday) - Vakantie modus
-- **Attributen**: Alle sensor data beschikbaar
+### 🎚️ Select
+- **Device Mode** — bedrijfsmodus:
+  - `SmartControl` — slimme zelflerende modus
+  - `Schedule` — volgens weekschema
+  - `Continuous` — altijd aan *(alleen VPR)*
+  - `Holiday` — vakantiemodus
 
-### 🔘 Switches (2)
-- **Boost Mode** 🚀
-  - Activeer snelle opwarming
-  - Status feedback (aan/uit)
-  
-- **PV Function** ☀️
-  - Schakel PV-overschot verwarming aan/uit
-  - Real-time status
+### 🔘 Switches
+- **Boost Mode** — snelle opwarming *(werkt nog niet, zie beperkingen)*
+- **Vakantie Modus** — Holiday aan/uit
+- **PV Function** — PV-overschot verwarming aan/uit *(alleen VPR)*
 
-### Water Heater Services (Home Assistant standaard)
+### 🔢 Numbers *(alleen VPR)*
+- **Temperatuur Instelling** (10–75°C)
+- **PV Start Limit** (0–10 kW) — start boiler boven dit PV-overschot
+- **PV Stop Limit** (0–10 kW) — stop boiler onder deze limiet
+- **PV Target Temperature** (40–90°C) — doeltemperatuur voor PV-modus
+
+### 📊 Sensors
+
+**Alle typen**
+- `Boiler Content` — vulgraad (%)
+- `Device State` — Online/Offline
+- `Device Power` — actueel vermogen (W)
+- `Target Temperature` — ingestelde doeltemperatuur (°C)
+- `Energy Consumption` — energieverbruik (kWh)
+- `Energy Saving` — besparing (kWh)
+- `Legionella Prevention Timer` — tijd tot preventie (uur)
+- `Software Version` — firmware versie
+
+**Alleen VPR**
+- `Water Temperature` — gemeten watertemperatuur (°C)
+- `PV Net Power`, `PV Power Consumption`, `PV Power Production` (kW)
+- `PV Enabled`, `PV Start Limit`, `PV Stop Limit`
+
+## Services
+
 ```yaml
-# Stel temperatuur in
-service: water_heater.set_temperature
-target:
-  entity_id: water_heater.itho_boiler_vpr242600095
-data:
-  temperature: 60
-
-# Wijzig bedrijfsmodus
-service: water_heater.set_operation_mode
-target:
-  entity_id: water_heater.itho_boiler_vpr242600095
-data:
-  operation_mode: "eco"  # eco, auto, heat_pump, off
-```
-
-### Custom Services
-```yaml
-# Activeer boost mode
+# Activeer boost mode (werkt nog niet, zie beperkingen)
 service: itho_daalderop.boost_boiler
 data:
   activate: true
+
+# Stel een weekschema in
+service: itho_daalderop.set_schedule
+data:
+  schedule:
+    "0": { "7": 60, "22": 40 }  # maandag: 07:00 60°C, 22:00 40°C
 ```
 
-## Automatisering Voorbeelden
+## Automatisering voorbeelden
 
-### PV Overschot Optimalisatie
+### Vakantiemodus koppelen aan afwezigheid
 ```yaml
 automation:
-  - alias: "Boiler: Warm water bij zonne-overschot"
+  - alias: "Boiler: vakantiemodus bij afwezigheid"
+    trigger:
+      - platform: state
+        entity_id: group.familie
+        to: "not_home"
+        for: "24:00:00"
+    action:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.vakantie_modus
+```
+
+### PV overschot optimalisatie (alleen VPR)
+```yaml
+automation:
+  - alias: "Boiler: warm water bij zonne-overschot"
     trigger:
       - platform: numeric_state
         entity_id: sensor.solar_power_surplus
@@ -171,110 +173,63 @@ automation:
         target:
           entity_id: number.pv_target_temperature
         data:
-          value: 75  # Maximaal opwarmen
+          value: 75
 ```
 
-### Boost bij lage boiler inhoud
+### Melding bij lage boilerinhoud
 ```yaml
 automation:
-  - alias: "Boiler: Boost bij laag niveau"
+  - alias: "Boiler: melding bij laag niveau"
     trigger:
       - platform: numeric_state
         entity_id: sensor.boiler_content
-        below: 20  # Onder 20%
+        below: 20  # onder 20%
     action:
-      - service: switch.turn_on
-        target:
-          entity_id: switch.boost_mode
-```
-
-### Nacht tarief optimalisatie
-```yaml
-automation:
-  - alias: "Boiler: Opwarmen tijdens nacht tarief"
-    trigger:
-      - platform: time
-        at: "23:00:00"
-    action:
-      - service: water_heater.set_temperature
-        target:
-          entity_id: water_heater.itho_boiler
+      - service: notify.mobile_app
         data:
-          temperature: 75
-      - service: water_heater.set_operation_mode
-        target:
-          entity_id: water_heater.itho_boiler
-        data:
-          operation_mode: "heat_pump"
+          message: "Boiler bijna leeg ({{ states('sensor.boiler_content') }}%)"
 ```
-  
-- **PV Stop Limit** (0-10 kW, stap 0.1)
-  - Stop boiler onder deze limiet
-  
-- **PV Target Temperature** (40-90°C, stap 1)
-  - Doeltemperatuur voor PV-modus
-
-### 📊 Sensors (16)
-**Device Status**
-- `Boiler Content` - Vulgraad (%)
-- `Device State` - Online/Offline status
-- `Device Mode` - Huidige bedrijfsmodus
-- `Device Power` - Actueel vermogen (W)
-- `Water Temperature` - Huidige temp (°C)
-- `Software Version` - Firmware versie
-- `Legionella Timer` - Tijd tot preventie (uur)
-
-**Energy Monitoring**
-- `Energy Consumption` - Totaal verbruik (kWh)
-- `Energy Saving` - Totale besparing (kWh)
-
-**PV Monitoring**
-- `PV Net Power` - Netto vermogen (kW, - = teruglevering)
-- `PV Power Consumption` - Afname van net (kW)
-- `PV Power Production` - Levering aan net (kW)
-
-**PV Settings (read-only sensors)**
-- `PV Enabled` - Status (On/Off)
-- `PV Start Limit` - Huidige startwaarde (kW)
-- `PV Stop Limit` - Huidige stopwaarde (kW)
-
-## Services
-
-De integratie biedt een Water Heater entity met standaard Home Assistant services:
-
-- `water_heater.set_temperature` - Stel doeltemperatuur in
-- `water_heater.set_operation_mode` - Wijzig bedrijfsmodus
 
 ## Troubleshooting
 
-### Kan geen login URL kopiëren?
-- Open Browser Console met **F12** of **Ctrl+Shift+I**
-- Zoek naar de regel met "Failed to launch"
-- De URL staat ook vaak in de **adresbalk** van de browser
-
 ### Token werkt niet?
-- Zorg dat je de **volledige URL** kopieert, inclusief `climateconnect://login?token=`
-- Token is 1 jaar geldig, daarna opnieuw inloggen
+- De juiste token begint met `eyJ` en bevat **precies twee punten** (drie
+  delen). Een token met vier punten is een tussenproduct van de Azure
+  login en werkt niet.
+- Token is 1 jaar geldig. Daarna: verwijder de integratie en voeg deze
+  opnieuw toe met een verse token.
+
+### Modus verandert niet direct?
+- De boiler volgt een moduswijziging binnen ~30 seconden; de API geeft in
+  die periode nog de oude modus terug. Dit is normaal.
+
+### Entiteiten "niet beschikbaar" na update?
+- Na de update naar apparaatprofielen worden op GRB-boilers de PV- en
+  temperatuurentiteiten niet meer aangemaakt. Verwijder de oude entiteiten
+  uit het entiteitenregister, of verwijder de integratie en voeg deze
+  opnieuw toe.
 
 ### Boiler reageert niet?
 - Controleer of het serienummer correct is (hoofdletters!)
-- Controleer of de boiler online is in de Itho app
+- Controleer of de boiler online is in de Climate Connect app
 
 ## Licentie
 
-MIT License - zie [LICENSE](LICENSE) voor details.
+MIT License — zie [LICENSE](LICENSE) voor details.
 
 ## Bijdragen
 
-Bijdragen zijn welkom! Zie [CONTRIBUTING.md](CONTRIBUTING.md) voor richtlijnen.
+Bijdragen zijn welkom! Zie [CONTRIBUTING.md](CONTRIBUTING.md) voor
+richtlijnen. Vooral gezocht: het request-formaat van de Boost-functie
+(netwerkverkeer van de Climate Connect app).
 
 ## Support
 
 - 📚 [Documentatie](docs/)
-- 🐛 [Issues](https://github.com/yourusername/itho-daalderop-ha/issues)
-- 💬 [Discussions](https://github.com/yourusername/itho-daalderop-ha/discussions)
+- 🐛 [Issues](https://github.com/JobDoesburg/Itho-Daalderop-GES-HA/issues)
 
 ## Credits
 
-Ontwikkeld door de Home Assistant community.  
-Gebaseerd op de Itho Daalderop Cloud Connect API.
+Gebaseerd op [Rien-R/Itho-Daalderop-GES-HA](https://github.com/Rien-R/Itho-Daalderop-GES-HA)
+en de Itho Daalderop Cloud Connect API. GRB-ondersteuning getest op een
+Smartboiler GRB240230157.
