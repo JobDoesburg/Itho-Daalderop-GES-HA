@@ -102,6 +102,10 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
   aanzetten via de API werkt nog niet *(zie beperkingen)*
 - **PV Function** — PV-overschot verwarming aan/uit *(alleen VPR)*
 
+### 🔔 Binary sensors
+- **Boost Active** — of boost actief is (ook als deze via de app is
+  gestart); reageert binnen één poll-interval (~2 min)
+
 ### 🔢 Numbers *(alleen VPR)*
 - **Temperatuur Instelling** (10–75°C)
 - **PV Start Limit** (0–10 kW) — start boiler boven dit PV-overschot
