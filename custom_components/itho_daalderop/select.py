@@ -11,14 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import IthoDataUpdateCoordinator
-from .const import (
-    CONF_SERIAL_NUMBER,
-    DOMAIN,
-    MODE_SMART_CONTROL,
-    MODE_SCHEDULE,
-    MODE_CONTINUOUS,
-    MODE_HOLIDAY,
-)
+from .const import CONF_SERIAL_NUMBER, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,12 +44,9 @@ class IthoDeviceModeSelect(CoordinatorEntity, SelectEntity):
         self._attr_unique_id = f"{serial_number}_device_mode"
         self._attr_name = "Device Mode"
         self._attr_icon = "mdi:state-machine"
-        self._attr_options = [
-            "SmartControl",  # Eco/Slim
-            "Schedule",      # Volgens schema
-            "Continuous",    # Continu aan (heat pump)
-            "Holiday",       # Vakantie/Off
-        ]
+        # Available modes depend on the boiler type (e.g. Smartboilers
+        # have no Continuous mode)
+        self._attr_options = list(coordinator.profile.modes)
         self._attr_device_info = {
             "identifiers": {(DOMAIN, serial_number)},
         }
@@ -75,9 +65,10 @@ class IthoDeviceModeSelect(CoordinatorEntity, SelectEntity):
         _LOGGER.info("Setting device mode to: %s", option)
         
         success = await self.coordinator.api_client.async_set_device_mode(option)
-        
+
         if success:
-            # Only refresh settings, not full device status - reduces API calls
-            await self.coordinator.async_refresh_settings()
+            # Don't re-read immediately: the API returns the old mode for up
+            # to ~30s after a write, which would revert the UI selection
+            self.coordinator.apply_mode_optimistically(option)
         else:
             _LOGGER.error("Failed to set device mode to %s", option)

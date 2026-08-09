@@ -86,7 +86,15 @@ class IthoApiClient:
                         raise IthoApiAuthenticationError(
                             "Authentication failed. Token may be expired."
                         )
-                    
+
+                    # Include the response body in errors: the API explains
+                    # why a call failed (e.g. unsupported mode for this device)
+                    if response.status >= 400:
+                        body = (await response.text())[:500]
+                        _LOGGER.error(
+                            "API error %s on %s: %s", response.status, endpoint, body
+                        )
+
                     # Raise for other HTTP errors
                     response.raise_for_status()
                     

@@ -19,6 +19,8 @@ from .const import (
     CONF_SERIAL_NUMBER,
     DOMAIN,
     UPDATE_INTERVAL,
+    DeviceProfile,
+    get_device_profile,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -50,8 +52,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create API client
     api_client = IthoApiClient(hass, serial_number, access_token)
 
-    # Create update coordinator
-    coordinator = IthoDataUpdateCoordinator(hass, api_client)
+    # Create update coordinator with the capability profile for this boiler type
+    profile = get_device_profile(serial_number)
+    _LOGGER.info(
+        "Setting up %s (%s) with profile: %s", serial_number, profile.model, profile
+    )
+    coordinator = IthoDataUpdateCoordinator(hass, api_client, profile)
 
     # Fetch initial data
     await coordinator.async_config_entry_first_refresh()
@@ -126,9 +132,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class IthoDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching Itho data."""
 
-    def __init__(self, hass: HomeAssistant, api_client: IthoApiClient) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        api_client: IthoApiClient,
+        profile: DeviceProfile,
+    ) -> None:
         """Initialize."""
         self.api_client = api_client
+        self.profile = profile
         self._update_count = 0  # Track updates for selective polling
         self._force_full_refresh = False  # Force fetch all data on next update
 
@@ -144,12 +156,32 @@ class IthoDataUpdateCoordinator(DataUpdateCoordinator):
         self._force_full_refresh = True
         await self.async_request_refresh()
 
+    def apply_mode_optimistically(self, mode: str) -> None:
+        """Reflect a mode change in local state without re-reading the API.
+
+        UpdateDeviceMode is eventually consistent: the POST returns 204
+        immediately, but GetDeviceMode keeps returning the old mode for up
+        to ~30s. Re-reading right after a write reverts the UI to the stale
+        value. Instead, update local state and let the next scheduled poll
+        confirm it.
+        """
+        if self.data:
+            self.data.setdefault("device_mode", {})["deviceMode"] = mode
+            self.data.setdefault("device_status", {})["deviceMode"] = mode
+            self.async_set_updated_data(self.data)
+        # Make the next poll refetch settings so the change is confirmed
+        self._force_full_refresh = True
+
     async def async_refresh_settings(self) -> None:
         """Refresh only settings data (mode + PV) without waiting for next poll."""
         try:
             device_mode = await self.api_client.async_get_device_mode()
-            pv_settings = await self.api_client.async_get_pv_settings()
-            
+            pv_settings = (
+                await self.api_client.async_get_pv_settings()
+                if self.profile.supports_pv
+                else {}
+            )
+
             # Update data without triggering full refresh
             if self.data:
                 self.data["device_mode"] = device_mode
@@ -183,7 +215,13 @@ class IthoDataUpdateCoordinator(DataUpdateCoordinator):
                     self._force_full_refresh
                 )
                 device_mode = await self.api_client.async_get_device_mode()
-                pv_settings = await self.api_client.async_get_pv_settings()
+                # PV endpoints are only meaningful for boilers with the PV
+                # function (GES); skip the slow API call for other types
+                pv_settings = (
+                    await self.api_client.async_get_pv_settings()
+                    if self.profile.supports_pv
+                    else {}
+                )
                 self._force_full_refresh = False  # Reset flag
             else:
                 # Reuse previous settings data

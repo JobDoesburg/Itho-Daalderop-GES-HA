@@ -118,9 +118,11 @@ class IthoWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         
         itho_mode = mode_mapping.get(operation_mode)
         if itho_mode:
-            await self.coordinator.api_client.async_set_device_mode(itho_mode)
-            # Only refresh settings data (mode + PV), not full device status
-            await self.coordinator.async_refresh_settings()
+            success = await self.coordinator.api_client.async_set_device_mode(itho_mode)
+            if success:
+                # Don't re-read immediately: the API returns the old mode
+                # for up to ~30s after a write
+                self.coordinator.apply_mode_optimistically(itho_mode)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

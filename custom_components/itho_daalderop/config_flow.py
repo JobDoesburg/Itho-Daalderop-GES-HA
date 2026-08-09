@@ -66,7 +66,10 @@ class IthoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             errors=errors,
             description_placeholders={
-                "serial_help": "Serienummer van je boiler (bijv. VPR242600095)"
+                "serial_help": (
+                    "Serienummer van je boiler "
+                    "(bijv. VPR242600095 of GRB240230157)"
+                )
             },
         )
 

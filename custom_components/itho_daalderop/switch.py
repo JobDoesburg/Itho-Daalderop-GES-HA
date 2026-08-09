@@ -25,8 +25,10 @@ async def async_setup_entry(
     switches = [
         IthoBoostSwitch(coordinator, serial_number),
         IthoHolidayModeSwitch(coordinator, serial_number),
-        IthoPvEnabledSwitch(coordinator, serial_number),
     ]
+
+    if coordinator.profile.supports_pv:
+        switches.append(IthoPvEnabledSwitch(coordinator, serial_number))
 
     async_add_entities(switches)
 
@@ -95,13 +97,13 @@ class IthoHolidayModeSwitch(CoordinatorEntity, SwitchEntity):
         """Enable Holiday mode."""
         success = await self.coordinator.api_client.async_set_device_mode(MODE_HOLIDAY)
         if success:
-            await self.coordinator.async_refresh_settings()
+            self.coordinator.apply_mode_optimistically(MODE_HOLIDAY)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Disable Holiday mode (switch to SmartControl)."""
         success = await self.coordinator.api_client.async_set_device_mode(MODE_SMART_CONTROL)
         if success:
-            await self.coordinator.async_refresh_settings()
+            self.coordinator.apply_mode_optimistically(MODE_SMART_CONTROL)
 
 
 class IthoPvEnabledSwitch(CoordinatorEntity, SwitchEntity):

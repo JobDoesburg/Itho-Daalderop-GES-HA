@@ -26,12 +26,21 @@ async def async_setup_entry(
     coordinator: IthoDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     serial_number = entry.data[CONF_SERIAL_NUMBER]
 
-    numbers: list[NumberEntity] = [
-        IthoTemperatureSetpointNumber(coordinator, serial_number),
-        IthoPvStartLimitNumber(coordinator, serial_number),
-        IthoPvStopLimitNumber(coordinator, serial_number),
-        IthoPvSetpointNumber(coordinator, serial_number),
-    ]
+    profile = coordinator.profile
+
+    numbers: list[NumberEntity] = []
+
+    if profile.supports_temperature_setpoint:
+        numbers.append(IthoTemperatureSetpointNumber(coordinator, serial_number))
+
+    if profile.supports_pv:
+        numbers.extend(
+            [
+                IthoPvStartLimitNumber(coordinator, serial_number),
+                IthoPvStopLimitNumber(coordinator, serial_number),
+                IthoPvSetpointNumber(coordinator, serial_number),
+            ]
+        )
 
     async_add_entities(numbers)
 
@@ -59,7 +68,7 @@ class IthoNumberBase(CoordinatorEntity, NumberEntity):
             "identifiers": {(DOMAIN, self._serial_number)},
             "name": f"Itho Boiler {self._serial_number}",
             "manufacturer": "Itho Daalderop",
-            "model": "Heat Pump Boiler",
+            "model": self.coordinator.profile.model,
         }
 
 

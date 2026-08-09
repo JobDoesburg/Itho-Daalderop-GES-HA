@@ -31,28 +31,40 @@ async def async_setup_entry(
     coordinator: IthoDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     serial_number = entry.data[CONF_SERIAL_NUMBER]
 
+    profile = coordinator.profile
+
     sensors: list[SensorEntity] = [
         # Device Status Sensors
         IthoBoilerContentSensor(coordinator, serial_number),
         # Note: Device Mode is now a SELECT entity for better UX
         IthoDeviceStateSensor(coordinator, serial_number),
         IthoDevicePowerSensor(coordinator, serial_number),
-        IthoDeviceTemperatureSensor(coordinator, serial_number),
         IthoSoftwareVersionSensor(coordinator, serial_number),
         IthoLegionellaTimerSensor(coordinator, serial_number),
-        
-        # PV Sensors
-        IthoPvPowerNetSensor(coordinator, serial_number),
-        IthoPvPowerConsumptionSensor(coordinator, serial_number),
-        IthoPvPowerProductionSensor(coordinator, serial_number),
-        IthoPvEnabledSensor(coordinator, serial_number),
-        IthoPvStartLimitSensor(coordinator, serial_number),
-        IthoPvStopLimitSensor(coordinator, serial_number),
-        
+
         # Energy Sensors
         IthoEnergyConsumptionSensor(coordinator, serial_number),
         IthoEnergySavingSensor(coordinator, serial_number),
+
+        # Target temperature from GetDeviceMode (available on all types,
+        # read-only on Smartboilers)
+        IthoTargetTemperatureSensor(coordinator, serial_number),
     ]
+
+    if profile.supports_temperature:
+        sensors.append(IthoDeviceTemperatureSensor(coordinator, serial_number))
+
+    if profile.supports_pv:
+        sensors.extend(
+            [
+                IthoPvPowerNetSensor(coordinator, serial_number),
+                IthoPvPowerConsumptionSensor(coordinator, serial_number),
+                IthoPvPowerProductionSensor(coordinator, serial_number),
+                IthoPvEnabledSensor(coordinator, serial_number),
+                IthoPvStartLimitSensor(coordinator, serial_number),
+                IthoPvStopLimitSensor(coordinator, serial_number),
+            ]
+        )
 
     async_add_entities(sensors)
 
@@ -75,7 +87,7 @@ class IthoSensorBase(CoordinatorEntity, SensorEntity):
             "identifiers": {(DOMAIN, serial_number)},
             "name": f"Itho Boiler {serial_number}",
             "manufacturer": "Itho Daalderop",
-            "model": "Water Heater",
+            "model": coordinator.profile.model,
         }
 
 
@@ -169,6 +181,26 @@ class IthoDeviceTemperatureSensor(IthoSensorBase):
         """Return the state of the sensor."""
         if self.coordinator.data and "device_status" in self.coordinator.data:
             return self.coordinator.data["device_status"].get("deviceTemperatureMeasured")
+        return None
+
+
+class IthoTargetTemperatureSensor(IthoSensorBase):
+    """Sensor for the boiler's target temperature (from GetDeviceMode)."""
+
+    def __init__(self, coordinator: IthoDataUpdateCoordinator, serial_number: str) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, serial_number, "target_temperature")
+        self._attr_name = "Target Temperature"
+        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+        self._attr_device_class = SensorDeviceClass.TEMPERATURE
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_icon = "mdi:thermometer-check"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the state of the sensor."""
+        if self.coordinator.data and "device_mode" in self.coordinator.data:
+            return self.coordinator.data["device_mode"].get("temperature")
         return None
 
 
@@ -297,8 +329,8 @@ class IthoEnergyConsumptionSensor(IthoSensorBase):
     @property
     def native_value(self) -> float | None:
         """Return the state of the sensor."""
-        if self.coordinator.data and "energy" in self.coordinator.data:
-            return self.coordinator.data["energy"].get("energyConsumption")
+        if self.coordinator.data and "device_status" in self.coordinator.data:
+            return self.coordinator.data["device_status"].get("energyConsumption")
         return None
 
 

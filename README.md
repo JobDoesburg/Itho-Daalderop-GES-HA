@@ -12,6 +12,30 @@
 
 Professionele Home Assistant integratie voor Itho Daalderop boiler met Cloud Connect functionaliteit.
 
+## 🏷️ Ondersteunde apparaten
+
+De integratie herkent het boilertype aan de eerste drie letters van het serienummer:
+
+| Serienummer | Type | Ondersteuning |
+|---|---|---|
+| `VPR...` | Green Energy Smartboiler® | Volledig: alle modi, temperatuurinstelling, PV-functie |
+| `GRB...` | Smartboiler (met Smart-upp module) | Modi SmartControl/Schedule/Holiday, Boost, monitoring. Geen PV-functie of vrije temperatuurinstelling (de boiler regelt dit zelflerend; Boost verwarmt eenmalig naar 85°C) |
+
+**Bekende beperking (alle typen):** de Boost-knop werkt momenteel niet.
+De API weigert de aanroep (`BoostBoilerRequestContract` validatiefout) — het
+verwachte request-formaat is nog onbekend. Wie het netwerkverkeer van de
+Climate Connect app kan opvangen (mitmproxy) kan dit oplossen; zie issue #1.
+
+**Let op:** modus-wijzigingen zijn *eventually consistent*: de API bevestigt
+direct, maar `GetDeviceMode` geeft tot ~30 seconden de oude modus terug.
+De integratie werkt hier omheen met een optimistische update.
+
+Onbekende serienummers krijgen het volledige (VPR) profiel. Werkt iets niet
+op jouw boilertype? Download dan de diagnostics (Instellingen → Apparaten &
+diensten → Itho Daalderop → Diagnostics downloaden) of draai
+`tests/probe_device.py` en open een issue met de output — daarmee kan het
+profiel voor jouw type verfijnd worden.
+
 ## ✨ Features
 
 ### 🎛️ **Volledige Controle**
