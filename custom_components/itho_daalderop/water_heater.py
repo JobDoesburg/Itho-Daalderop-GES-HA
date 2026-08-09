@@ -102,9 +102,14 @@ class IthoWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         """Set new target temperature."""
         temperature = kwargs.get("temperature")
         if temperature is not None:
-            await self.coordinator.api_client.async_set_temperature(temperature)
-            # Temperature change is reflected in device_status, will be updated on next poll
-            # No immediate refresh needed - reduces API calls
+            current_mode = "SmartControl"
+            if self.coordinator.data and "device_mode" in self.coordinator.data:
+                current_mode = self.coordinator.data["device_mode"].get(
+                    "deviceMode", current_mode
+                )
+            await self.coordinator.api_client.async_set_temperature(
+                temperature, current_mode
+            )
 
     async def async_set_operation_mode(self, operation_mode: str) -> None:
         """Set new operation mode."""

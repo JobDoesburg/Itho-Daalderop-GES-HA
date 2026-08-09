@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import timedelta
 from typing import Any
 
@@ -12,12 +13,14 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import IthoApiClient
 from .const import (
     CONF_ACCESS_TOKEN,
     CONF_SERIAL_NUMBER,
     DOMAIN,
+    MODE_SETTLE_SECONDS,
     UPDATE_INTERVAL,
     DeviceProfile,
     get_device_profile,
@@ -25,7 +28,13 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.SWITCH, Platform.NUMBER, Platform.SELECT]
+PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
+    Platform.NUMBER,
+    Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
+]
 
 # Service schemas
 SERVICE_BOOST_BOILER = "boost_boiler"
@@ -143,6 +152,8 @@ class IthoDataUpdateCoordinator(DataUpdateCoordinator):
         self.profile = profile
         self._update_count = 0  # Track updates for selective polling
         self._force_full_refresh = False  # Force fetch all data on next update
+        self._pending_mode: str | None = None  # Mode written but possibly not yet visible
+        self._mode_written_at: float = 0.0
 
         super().__init__(
             hass,
@@ -162,9 +173,12 @@ class IthoDataUpdateCoordinator(DataUpdateCoordinator):
         UpdateDeviceMode is eventually consistent: the POST returns 204
         immediately, but GetDeviceMode keeps returning the old mode for up
         to ~30s. Re-reading right after a write reverts the UI to the stale
-        value. Instead, update local state and let the next scheduled poll
-        confirm it.
+        value. Instead, update local state; polls within the settle window
+        keep trusting this value (see _async_update_data), after which the
+        API is authoritative again.
         """
+        self._pending_mode = mode
+        self._mode_written_at = time.monotonic()
         if self.data:
             self.data.setdefault("device_mode", {})["deviceMode"] = mode
             self.data.setdefault("device_status", {})["deviceMode"] = mode
@@ -210,7 +224,7 @@ class IthoDataUpdateCoordinator(DataUpdateCoordinator):
             
             if should_fetch_settings:
                 _LOGGER.debug(
-                    "Fetching settings data (update #%d, forced=%s)", 
+                    "Fetching settings data (update #%d, forced=%s)",
                     self._update_count,
                     self._force_full_refresh
                 )
@@ -222,21 +236,65 @@ class IthoDataUpdateCoordinator(DataUpdateCoordinator):
                     if self.profile.supports_pv
                     else {}
                 )
+                energy_today = await self._async_fetch_energy_today()
                 self._force_full_refresh = False  # Reset flag
             else:
                 # Reuse previous settings data
                 device_mode = self.data.get("device_mode", {}) if self.data else {}
                 pv_settings = self.data.get("pv_settings", {}) if self.data else {}
-            
-            # Note: GetEnergyConsumption requires startDate, endDate, interval parameters
-            # This can be added as a service call when needed
-            # energy = await self.api_client.async_get_energy_consumption()
+                energy_today = self.data.get("energy_today", {}) if self.data else {}
+
+            # A recently written mode wins over API reads that may still be
+            # stale (a poll can land inside the ~30s propagation window)
+            if self._pending_mode is not None:
+                if time.monotonic() - self._mode_written_at < MODE_SETTLE_SECONDS:
+                    device_status = {**device_status, "deviceMode": self._pending_mode}
+                    device_mode = {**device_mode, "deviceMode": self._pending_mode}
+                else:
+                    self._pending_mode = None
 
             return {
                 "device_status": device_status,
                 "device_mode": device_mode,
                 "pv_settings": pv_settings,
-                "energy": {},  # Empty for now, can be populated via service call
+                "energy_today": energy_today,
             }
         except Exception as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
+
+    async def _async_fetch_energy_today(self) -> dict[str, Any]:
+        """Fetch today's energy consumption and costs.
+
+        GetDeviceStatus.energyConsumption is not a daily total (it reports
+        a much smaller rolling value); the app's daily figure comes from
+        GetEnergyConsumption. Summing the buckets tolerates the API
+        returning more than one.
+        """
+        try:
+            start_of_day = dt_util.start_of_local_day()
+            start_ms = int(start_of_day.timestamp() * 1000)
+            end_ms = int(dt_util.now().timestamp() * 1000)
+
+            result = await self.api_client.async_get_energy_consumption(
+                start_ms, end_ms
+            )
+            # Buckets are UTC days and the response includes the bucket
+            # overlapping startDate, i.e. usually yesterday too — keep only
+            # buckets whose local date is today
+            today = dt_util.now().date()
+            data = [
+                entry
+                for entry in result.get("data", [])
+                if dt_util.as_local(
+                    dt_util.utc_from_timestamp(entry.get("timeStamp", 0) / 1000)
+                ).date()
+                == today
+            ]
+            return {
+                "consumption": sum(entry.get("consumption") or 0 for entry in data),
+                "costs": sum(entry.get("costs") or 0 for entry in data),
+            }
+        except Exception as err:
+            _LOGGER.warning("Failed to fetch energy consumption: %s", err)
+            # Keep previous value rather than blanking the sensor
+            return self.data.get("energy_today", {}) if self.data else {}

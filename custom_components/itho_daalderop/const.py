@@ -31,6 +31,23 @@ DEVICE_MODES = [
     MODE_HOLIDAY,
 ]
 
+# Display names matching the Climate Connect app. The app's "standby" is
+# deviceMode=Holiday; its dated "holiday mode" is standby with a start/end
+# date on top. Verified against a GRB Smartboiler: all four values are
+# accepted ("Standby"/"AlwaysOn"/"Boost" are not valid API values).
+MODE_LABELS = {
+    MODE_SMART_CONTROL: "Smart",
+    MODE_SCHEDULE: "Schedule",
+    MODE_CONTINUOUS: "Always on",
+    MODE_HOLIDAY: "Standby",
+}
+MODE_FROM_LABEL = {label: mode for mode, label in MODE_LABELS.items()}
+
+# GetDeviceMode keeps returning the old mode for up to ~30s after an
+# UpdateDeviceMode write. Within this window, polls trust the locally
+# written mode instead of the (possibly stale) API value.
+MODE_SETTLE_SECONDS = 90
+
 
 @dataclass(frozen=True)
 class DeviceProfile:
@@ -55,14 +72,12 @@ PROFILE_GES = DeviceProfile(model="Green Energy Smartboiler")
 
 # Smartboiler with Smart-upp module: self-learning boiler controlled via the
 # same app/API, but without the PV function or free temperature setpoint.
-# Boost always heats to 85°C once; modes are Smart Control, Schedule and
-# Holiday (vacation).
+# All four device modes are supported (verified live on a GRB device).
 PROFILE_SMARTBOILER = DeviceProfile(
     model="Smartboiler (Smart-upp)",
     supports_temperature=False,
     supports_temperature_setpoint=False,
     supports_pv=False,
-    modes=[MODE_SMART_CONTROL, MODE_SCHEDULE, MODE_HOLIDAY],
 )
 
 DEVICE_PROFILES = {

@@ -89,17 +89,27 @@ class IthoTemperatureSetpointNumber(IthoNumberBase):
     @property
     def native_value(self) -> float | None:
         """Return the current value."""
-        if self.coordinator.data and "device_status" in self.coordinator.data:
-            return self.coordinator.data["device_status"].get("deviceTemperatureSetpoint")
+        if self.coordinator.data and "device_mode" in self.coordinator.data:
+            return self.coordinator.data["device_mode"].get("temperature")
         return None
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the value."""
         _LOGGER.info("Setting temperature setpoint to %s°C", value)
-        success = await self.coordinator.api_client.async_set_temperature(value)
+        # The setpoint travels in the UpdateDeviceMode payload, so the
+        # current mode is sent along unchanged
+        current_mode = "SmartControl"
+        if self.coordinator.data and "device_mode" in self.coordinator.data:
+            current_mode = self.coordinator.data["device_mode"].get(
+                "deviceMode", current_mode
+            )
+        success = await self.coordinator.api_client.async_set_temperature(
+            value, current_mode
+        )
         if success:
-            # Temperature is reflected in device_status, will update on next poll
-            _LOGGER.debug("Temperature setpoint updated successfully")
+            if self.coordinator.data and "device_mode" in self.coordinator.data:
+                self.coordinator.data["device_mode"]["temperature"] = value
+                self.coordinator.async_set_updated_data(self.coordinator.data)
         else:
             _LOGGER.error("Failed to update temperature setpoint")
 

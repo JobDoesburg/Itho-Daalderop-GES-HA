@@ -19,7 +19,7 @@ De integratie herkent het boilertype aan de eerste drie letters van het serienum
 | Serienummer | Type | Ondersteuning |
 |---|---|---|
 | `VPR...` | Green Energy Smartboiler® | Volledig: 4 modi, temperatuurinstelling, PV-functie |
-| `GRB...` | Smartboiler (met Smart-upp module) | Modi SmartControl/Schedule/Holiday en monitoring. Geen PV-functie of vrije temperatuurinstelling (de boiler regelt dit zelflerend) |
+| `GRB...` | Smartboiler (met Smart-upp module) | 4 modi en monitoring. Geen PV-functie; doeltemperatuur is alleen-lezen (de API accepteert een wijziging maar negeert deze — live geverifieerd) |
 
 Onbekende serienummers krijgen het volledige (VPR) profiel. Werkt iets niet
 op jouw boilertype? Download dan de diagnostics (Instellingen → Apparaten &
@@ -41,15 +41,14 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
 
 ## ✨ Features
 
-- **Bedrijfsmodus** instelbaar via select entity (SmartControl, Schedule,
-  Continuous*, Holiday) — *Continuous alleen op VPR
-- **Vakantiemodus** als aparte schakelaar
+- **Bedrijfsmodus** instelbaar via één select entity met dezelfde namen
+  als de app: Smart, Schedule, Always on, Standby
 - **Temperatuurinstelling** (10–75°C, alleen VPR)
 - **PV (zonnepanelen) optimalisatie** (alleen VPR): PV-functie aan/uit,
   start/stop limieten, PV doeltemperatuur, live PV monitoring
 - **Uitgebreide monitoring**: vulgraad, vermogen, energieverbruik en
-  -besparing, doeltemperatuur, legionella preventie timer,
-  online/offline status, firmware versie
+  -kosten van vandaag, besparing, doeltemperatuur, boost status,
+  legionella preventie timer, online/offline status, firmware versie
 - **Token-based authenticatie** (geen wachtwoord in HA); token is 1 jaar
   geldig, daarna opnieuw inloggen
 - **Diagnostics ondersteuning** voor het debuggen van nieuwe boilertypes
@@ -90,16 +89,20 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
 ## Entiteiten
 
 ### 🎚️ Select
-- **Device Mode** — bedrijfsmodus:
-  - `SmartControl` — slimme zelflerende modus
-  - `Schedule` — volgens weekschema
-  - `Continuous` — altijd aan *(alleen VPR)*
-  - `Holiday` — vakantiemodus
+- **Device Mode** — bedrijfsmodus, met dezelfde namen als de app
+  (API-waarde tussen haakjes):
+  - `Smart` (SmartControl) — slimme zelflerende modus
+  - `Schedule` (Schedule) — volgens weekschema
+  - `Always on` (Continuous) — altijd aan
+  - `Standby` (Holiday) — uit; in de app heet dit "standby", de
+    vakantiemodus van de app is standby met een begin- en einddatum
 
 ### 🔘 Switches
-- **Boost Mode** — snelle opwarming *(werkt nog niet, zie beperkingen)*
-- **Vakantie Modus** — Holiday aan/uit
 - **PV Function** — PV-overschot verwarming aan/uit *(alleen VPR)*
+
+### 🔔 Binary sensors
+- **Boost Active** — of boost actief is *(alleen-lezen: boost aanzetten
+  kan nog niet, zie beperkingen)*
 
 ### 🔢 Numbers *(alleen VPR)*
 - **Temperatuur Instelling** (10–75°C)
@@ -114,7 +117,8 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
 - `Device State` — Online/Offline
 - `Device Power` — actueel vermogen (W)
 - `Target Temperature` — ingestelde doeltemperatuur (°C)
-- `Energy Consumption` — energieverbruik (kWh)
+- `Energy Consumption Today` — verbruik vandaag (kWh, zoals in de app)
+- `Energy Costs Today` — kosten vandaag (EUR)
 - `Energy Saving` — besparing (kWh)
 - `Legionella Prevention Timer` — tijd tot preventie (uur)
 - `Software Version` — firmware versie
@@ -141,19 +145,21 @@ data:
 
 ## Automatisering voorbeelden
 
-### Vakantiemodus koppelen aan afwezigheid
+### Standby bij afwezigheid
 ```yaml
 automation:
-  - alias: "Boiler: vakantiemodus bij afwezigheid"
+  - alias: "Boiler: standby bij afwezigheid"
     trigger:
       - platform: state
         entity_id: group.familie
         to: "not_home"
         for: "24:00:00"
     action:
-      - service: switch.turn_on
+      - service: select.select_option
         target:
-          entity_id: switch.vakantie_modus
+          entity_id: select.device_mode
+        data:
+          option: "Standby"
 ```
 
 ### PV overschot optimalisatie (alleen VPR)
@@ -204,10 +210,12 @@ automation:
   die periode nog de oude modus terug. Dit is normaal.
 
 ### Entiteiten "niet beschikbaar" na update?
-- Na de update naar apparaatprofielen worden op GRB-boilers de PV- en
-  temperatuurentiteiten niet meer aangemaakt. Verwijder de oude entiteiten
-  uit het entiteitenregister, of verwijder de integratie en voeg deze
-  opnieuw toe.
+- Sommige entiteiten zijn vervangen of worden per boilertype niet meer
+  aangemaakt (de Boost- en Vakantie-schakelaars zijn vervangen door de
+  Device Mode select en de Boost Active binary sensor; op GRB vervallen
+  ook de PV- en temperatuurentiteiten). Verwijder de oude entiteiten uit
+  het entiteitenregister, of verwijder de integratie en voeg deze opnieuw
+  toe.
 
 ### Boiler reageert niet?
 - Controleer of het serienummer correct is (hoofdletters!)

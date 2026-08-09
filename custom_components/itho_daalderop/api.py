@@ -184,12 +184,26 @@ class IthoApiClient:
             params={"serialNumber": self.serial_number},
         )
 
-    async def async_get_energy_consumption(self) -> dict[str, Any]:
-        """Get energy consumption from API."""
+    async def async_get_energy_consumption(
+        self, start_ms: int, end_ms: int, interval: str = "Day"
+    ) -> dict[str, Any]:
+        """Get energy consumption for a period.
+
+        Timestamps are epoch milliseconds; interval is e.g. "Day". The
+        result contains a "data" list with one entry per interval bucket,
+        each with "consumption" (kWh) and "costs".
+        """
         return await self._make_request(
             "GET",
             "GetEnergyConsumption",
-            params={"serialNumber": self.serial_number},
+            params={
+                "serialNumber": self.serial_number,
+                "startDate": start_ms,
+                "endDate": end_ms,
+                "interval": interval,
+                "includePreviousPeriod": "false",
+                "refreshCache": "false",
+            },
         )
 
     async def async_set_device_mode(self, mode: str, schedule: str | None = None) -> bool:
@@ -230,17 +244,23 @@ class IthoApiClient:
             _LOGGER.error("Failed to boost boiler: %s", err)
             return False
 
-    async def async_set_temperature(self, temperature: float) -> bool:
-        """Set target temperature."""
+    async def async_set_temperature(self, temperature: float, device_mode: str) -> bool:
+        """Set target temperature.
+
+        There is no separate temperature endpoint (UpdateDeviceTemperature
+        returns 404); the setpoint travels in the UpdateDeviceMode payload,
+        so the current mode must be sent along.
+        """
         payload = {
             "serialNumber": self.serial_number,
+            "deviceMode": device_mode,
             "temperature": temperature,
         }
 
         try:
             await self._make_request(
                 "POST",
-                "UpdateDeviceTemperature",
+                "UpdateDeviceMode",
                 json_data=payload,
             )
             return True

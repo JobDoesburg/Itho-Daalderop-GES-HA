@@ -44,6 +44,7 @@ async def async_setup_entry(
 
         # Energy Sensors
         IthoEnergyConsumptionSensor(coordinator, serial_number),
+        IthoEnergyCostsSensor(coordinator, serial_number),
         IthoEnergySavingSensor(coordinator, serial_number),
 
         # Target temperature from GetDeviceMode (available on all types,
@@ -316,21 +317,42 @@ class IthoPvStopLimitSensor(IthoSensorBase):
 
 
 class IthoEnergyConsumptionSensor(IthoSensorBase):
-    """Sensor for energy consumption."""
+    """Sensor for today's energy consumption (from GetEnergyConsumption)."""
 
     def __init__(self, coordinator: IthoDataUpdateCoordinator, serial_number: str) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator, serial_number, "energy_consumption")
-        self._attr_name = "Energy Consumption"
+        self._attr_name = "Energy Consumption Today"
         self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+        self._attr_suggested_display_precision = 2
 
     @property
     def native_value(self) -> float | None:
         """Return the state of the sensor."""
-        if self.coordinator.data and "device_status" in self.coordinator.data:
-            return self.coordinator.data["device_status"].get("energyConsumption")
+        if self.coordinator.data:
+            return self.coordinator.data.get("energy_today", {}).get("consumption")
+        return None
+
+
+class IthoEnergyCostsSensor(IthoSensorBase):
+    """Sensor for today's energy costs (from GetEnergyConsumption)."""
+
+    def __init__(self, coordinator: IthoDataUpdateCoordinator, serial_number: str) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, serial_number, "energy_costs")
+        self._attr_name = "Energy Costs Today"
+        self._attr_native_unit_of_measurement = "EUR"
+        self._attr_device_class = SensorDeviceClass.MONETARY
+        self._attr_state_class = SensorStateClass.TOTAL
+        self._attr_suggested_display_precision = 2
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the state of the sensor."""
+        if self.coordinator.data:
+            return self.coordinator.data.get("energy_today", {}).get("costs")
         return None
 
 
