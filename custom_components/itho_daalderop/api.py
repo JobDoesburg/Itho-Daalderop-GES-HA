@@ -1,5 +1,6 @@
 """API client for Itho Daalderop."""
 import asyncio
+import json
 import logging
 from typing import Any
 
@@ -97,14 +98,22 @@ class IthoApiClient:
 
                     # Raise for other HTTP errors
                     response.raise_for_status()
-                    
-                    # Parse and validate response
-                    data = await response.json()
-                    
+
+                    # Write endpoints return 204 No Content: parsing the
+                    # empty body as JSON raises, which made every
+                    # successful write look like a failure
+                    if response.status == 204:
+                        return {}
+                    text = await response.text()
+                    if not text:
+                        return {}
+
+                    data = json.loads(text)
+
                     # Validate response structure
                     if not isinstance(data, dict):
                         raise IthoApiError(f"Invalid response format: expected dict, got {type(data)}")
-                    
+
                     # Return result or empty dict if no result key
                     return data.get("result", {})
                     
