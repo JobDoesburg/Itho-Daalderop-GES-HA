@@ -6,6 +6,6 @@
   "documentation": "https://github.com/JobDoesburg/Itho-Daalderop-GES-HA",
   "issue_tracker": "https://github.com/JobDoesburg/Itho-Daalderop-GES-HA/issues",
   "requirements": [],
-  "version": "1.6.0",
+  "version": "2.0.0",
   "iot_class": "cloud_polling"
 }

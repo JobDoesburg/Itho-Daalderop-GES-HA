@@ -63,9 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Create update coordinator with the capability profile for this boiler type
     profile = get_device_profile(serial_number)
-    _LOGGER.info(
-        "Setting up %s (%s) with profile: %s", serial_number, profile.model, profile
-    )
+    _LOGGER.debug("Setting up %s as %s", serial_number, profile.model)
     coordinator = IthoDataUpdateCoordinator(hass, api_client, profile)
 
     # Fetch initial data
@@ -82,20 +80,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def handle_boost_boiler(call: ServiceCall) -> None:
         """Handle boost boiler service call."""
         activate = call.data.get("activate", True)
-        _LOGGER.info("Boost boiler service called: activate=%s", activate)
-        
+        _LOGGER.debug("Boost boiler service called: activate=%s", activate)
+
         # Get coordinator from first entry (assumes single device)
         coordinators = list(hass.data[DOMAIN].values())
         if coordinators:
             coordinator = coordinators[0]
             await coordinator.api_client.async_boost_boiler(activate)
             await coordinator.async_request_refresh()
-    
+
     async def handle_set_schedule(call: ServiceCall) -> None:
         """Handle set schedule service call."""
         schedule = call.data.get("schedule")
-        _LOGGER.info("Set schedule service called with schedule: %s", schedule)
-        
+        _LOGGER.debug("Set schedule service called with schedule: %s", schedule)
+
         # Get coordinator from first entry (assumes single device)
         coordinators = list(hass.data[DOMAIN].values())
         if coordinators:
@@ -107,14 +105,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
             if success:
                 await coordinator.async_refresh_settings()
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_BOOST_BOILER,
         handle_boost_boiler,
         schema=BOOST_BOILER_SCHEMA,
     )
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_SET_SCHEDULE,
@@ -129,7 +127,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
-        
+
         # Remove services if this was the last entry
         if not hass.data[DOMAIN]:
             hass.services.async_remove(DOMAIN, SERVICE_BOOST_BOILER)
@@ -202,7 +200,7 @@ class IthoDataUpdateCoordinator(DataUpdateCoordinator):
                 self.data["device_mode"] = device_mode
                 self.data["pv_settings"] = pv_settings
                 self.async_set_updated_data(self.data)
-            
+
             _LOGGER.debug("Settings data refreshed after user change")
         except Exception as err:
             _LOGGER.warning("Failed to refresh settings: %s", err)
@@ -211,18 +209,18 @@ class IthoDataUpdateCoordinator(DataUpdateCoordinator):
         """Fetch data from API."""
         try:
             self._update_count += 1
-            
+
             # Always fetch critical real-time data (device status)
             device_status = await self.api_client.async_get_device_status()
-            
+
             # Fetch settings only every 5th update OR when forced
             # Settings (mode, PV) rarely change - only when user changes them
             should_fetch_settings = (
-                self._update_count % 5 == 1 
-                or not self.data 
+                self._update_count % 5 == 1
+                or not self.data
                 or self._force_full_refresh
             )
-            
+
             if should_fetch_settings:
                 _LOGGER.debug(
                     "Fetching settings data (update #%d, forced=%s)",

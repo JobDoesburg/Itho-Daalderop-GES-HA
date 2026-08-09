@@ -28,12 +28,16 @@ diensten → Itho Daalderop → Diagnostics downloaden) of draai
 [issue](https://github.com/JobDoesburg/Itho-Daalderop-GES-HA/issues) met de
 output — daarmee kan het profiel voor jouw type verfijnd worden.
 
-### Bekende beperkingen
+### Goed om te weten
 
 - **Modus-wijzigingen zijn *eventually consistent***: de API bevestigt
   direct, maar geeft tot ~30 seconden de oude modus terug. De integratie
   werkt hier omheen met een optimistische update; de boiler zelf volgt
   binnen ~30 seconden.
+- **Boost stopt vanzelf** zodra de boiler op temperatuur is; de switch
+  volgt dat binnen één poll-interval (~2 min).
+- **Watertemperatuur** zit niet in de API voor GRB-boilers (ook de
+  officiële app toont deze niet); daarom ontbreekt die sensor daar.
 
 ## ✨ Features
 
@@ -97,22 +101,15 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
 - **Boost Mode** — eenmalige snelle opwarming; aan- én uitzetten werken
 - **PV Function** — PV-overschot verwarming aan/uit *(alleen VPR)*
 
-### 🔔 Binary sensors
-- **Boost Active** — of boost actief is (ook als deze via de app is
-  gestart); reageert binnen één poll-interval (~2 min)
-
-## API-documentatie
-
-De boilers gebruiken de "Open API for Itho Daalderop CCA". De volledige
-OpenAPI-specificatie is opgehaald van `GET https://wifi-api.id-c.net/api/swagger.json`
-en opgeslagen in [docs/api-openapi.json](docs/api-openapi.json) als
-referentie voor verdere ontwikkeling.
-
 ### 🔢 Numbers *(alleen VPR)*
 - **Temperatuur Instelling** (10–75°C)
 - **PV Start Limit** (0–10 kW) — start boiler boven dit PV-overschot
 - **PV Stop Limit** (0–10 kW) — stop boiler onder deze limiet
 - **PV Target Temperature** (40–90°C) — doeltemperatuur voor PV-modus
+
+### 🔔 Binary sensors
+- **Boost Active** — of boost actief is (ook als deze via de app is
+  gestart); reageert binnen één poll-interval (~2 min)
 
 ### 📊 Sensors
 
@@ -132,13 +129,21 @@ referentie voor verdere ontwikkeling.
 - `PV Net Power`, `PV Power Consumption`, `PV Power Production` (kW)
 - `PV Enabled`, `PV Start Limit`, `PV Stop Limit`
 
+## API-documentatie
+
+De boilers gebruiken de "Open API for Itho Daalderop CCA". De volledige
+OpenAPI-specificatie is opgehaald van
+`GET https://wifi-api.id-c.net/api/swagger.json` en opgeslagen in
+[docs/api-openapi.json](docs/api-openapi.json) als referentie voor verdere
+ontwikkeling.
+
 ## Services
 
 ```yaml
-# Activeer boost mode (werkt nog niet, zie beperkingen)
+# Boost aan- of uitzetten
 service: itho_daalderop.boost_boiler
 data:
-  activate: true
+  activate: true   # false om te annuleren
 
 # Stel een weekschema in
 service: itho_daalderop.set_schedule

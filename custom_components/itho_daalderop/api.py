@@ -63,7 +63,7 @@ class IthoApiClient:
     ) -> dict[str, Any]:
         """Make an API request with retry logic and proper error handling."""
         url = f"{API_BASE_URL}/{endpoint}"
-        
+
         for attempt in range(retries + 1):
             try:
                 _LOGGER.debug(
@@ -73,7 +73,7 @@ class IthoApiClient:
                     attempt + 1,
                     retries + 1,
                 )
-                
+
                 async with self._session.request(
                     method,
                     url,
@@ -116,23 +116,23 @@ class IthoApiClient:
 
                     # Return result or empty dict if no result key
                     return data.get("result", {})
-                    
+
             except asyncio.TimeoutError as err:
                 # Don't retry on timeout - API is just slow
                 _LOGGER.error("API timeout for %s (API takes ~16s per call)", endpoint)
                 raise IthoApiTimeoutError(f"Timeout calling {endpoint}") from err
-                
+
             except ClientResponseError as err:
                 if err.status == 401:
                     raise IthoApiAuthenticationError(
                         "Authentication failed. Token may be expired."
                     ) from err
-                    
+
                 # Don't retry on 4xx errors (client errors)
                 if 400 <= err.status < 500:
                     _LOGGER.error("Client error %s: %s", err.status, err.message)
                     raise IthoApiError(f"API error {err.status}: {err.message}") from err
-                
+
                 # Retry on 5xx errors (server errors)
                 if attempt < retries:
                     _LOGGER.warning(
@@ -144,9 +144,9 @@ class IthoApiClient:
                     )
                     await asyncio.sleep(RETRY_DELAY)
                     continue
-                    
+
                 raise IthoApiError(f"Server error {err.status}: {err.message}") from err
-                
+
             except ClientError as err:
                 # Retry on network errors
                 if attempt < retries:
@@ -159,13 +159,13 @@ class IthoApiClient:
                     )
                     await asyncio.sleep(RETRY_DELAY)
                     continue
-                    
+
                 raise IthoApiConnectionError(f"Connection failed: {err}") from err
-                
+
             except Exception as err:
                 _LOGGER.error("Unexpected error calling %s: %s", endpoint, err)
                 raise IthoApiError(f"Unexpected error: {err}") from err
-        
+
         # Should never reach here, but just in case
         raise IthoApiError(f"Failed to call {endpoint} after {retries + 1} attempts")
 
@@ -221,7 +221,7 @@ class IthoApiClient:
             "serialNumber": self.serial_number,
             "deviceMode": mode,
         }
-        
+
         if schedule:
             payload["deviceSchedule"] = schedule
 
@@ -290,7 +290,7 @@ class IthoApiClient:
         pv_setpoint: float | None = None,
     ) -> bool:
         """Update PV settings.
-        
+
         Args:
             pv_enabled: Enable/disable PV function
             pv_start_limit: Start heating when PV surplus exceeds this (kW)
@@ -301,7 +301,7 @@ class IthoApiClient:
         payload = {
             "serialNumber": self.serial_number,
         }
-        
+
         if pv_enabled is not None:
             payload["pvEnabled"] = pv_enabled
         if pv_start_limit is not None:
