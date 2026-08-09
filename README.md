@@ -115,7 +115,7 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
 **Alle typen**
 - `Boiler Content` — vulgraad (%)
 - `Device State` — Online/Offline
-- `Device Power` — actueel vermogen (W)
+- `Device Power` — actueel vermogen (kW)
 - `Target Temperature` — ingestelde doeltemperatuur (°C)
 - `Energy Consumption Today` — verbruik vandaag (kWh, zoals in de app)
 - `Energy Costs Today` — kosten vandaag (EUR)

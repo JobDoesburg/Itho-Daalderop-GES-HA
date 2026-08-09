@@ -154,9 +154,13 @@ class IthoDevicePowerSensor(IthoSensorBase):
         """Initialize the sensor."""
         super().__init__(coordinator, serial_number, "device_power")
         self._attr_name = "Device Power"
-        self._attr_native_unit_of_measurement = UnitOfPower.WATT
+        # devicePowerMeasured is in kW, like every power field in this API
+        # (a heating boiler reads ~1.93; as watts that would be a rounded
+        # "2 W" while the element actually draws ~2 kW)
+        self._attr_native_unit_of_measurement = UnitOfPower.KILO_WATT
         self._attr_device_class = SensorDeviceClass.POWER
         self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_suggested_display_precision = 2
 
     @property
     def native_value(self) -> float | None:
