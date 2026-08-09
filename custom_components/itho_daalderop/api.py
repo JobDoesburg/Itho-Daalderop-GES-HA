@@ -236,10 +236,15 @@ class IthoApiClient:
             _LOGGER.error("Failed to set device mode: %s", err)
             return False
 
-    async def async_boost_boiler(self) -> bool:
-        """Activate boiler boost."""
+    async def async_boost_boiler(self, activate: bool = True) -> bool:
+        """Activate or cancel boiler boost.
+
+        The BoostBoiler contract requires the boolean "activateBoost"
+        (field name from the API's OpenAPI spec at /api/swagger.json).
+        """
         payload = {
             "serialNumber": self.serial_number,
+            "activateBoost": activate,
         }
 
         try:
@@ -250,7 +255,7 @@ class IthoApiClient:
             )
             return True
         except IthoApiError as err:
-            _LOGGER.error("Failed to boost boiler: %s", err)
+            _LOGGER.error("Failed to %s boost: %s", "boost" if activate else "cancel", err)
             return False
 
     async def async_set_temperature(self, temperature: float, device_mode: str) -> bool:

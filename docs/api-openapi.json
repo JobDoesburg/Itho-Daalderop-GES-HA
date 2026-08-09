@@ -1,0 +1,1102 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Open API for Itho Daalderop CCA",
+    "description": "API for the CCA app for wifi-connected boilers",
+    "version": "8.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://wifi-api.id-c.net/api"
+    }
+  ],
+  "paths": {
+    "/BoostBoiler": {
+      "post": {
+        "tags": [
+          "DeviceMode"
+        ],
+        "description": "Requests to boost the boiler",
+        "operationId": "BoostBoiler",
+        "requestBody": {
+          "description": "Serial Number of the connected device",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/boostBoilerRequestContract"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Response when the input is wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device with Serial number not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Boiler is boosted successfully"
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    },
+    "/GetDeviceMode": {
+      "get": {
+        "tags": [
+          "DeviceMode"
+        ],
+        "description": "Returns the SmartGrid Status details of the connected device",
+        "operationId": "GetDeviceMode",
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "query",
+            "description": "Serial number of the connected device",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payload of GetDeviceModeResponseContract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getDeviceModeResponseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device with Serial number not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    },
+    "/GetDevicePVSettings": {
+      "get": {
+        "tags": [
+          "DevicePVSettings"
+        ],
+        "description": "Returns the Device PV settings",
+        "operationId": "GetDevicePVSettings",
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "query",
+            "description": "Serial number of the connected device",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payload of GetDevicePVSettingsResponseContract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getDevicePVSettingsResponseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device with Serial number not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    },
+    "/GetDeviceStatus": {
+      "get": {
+        "tags": [
+          "Device Status"
+        ],
+        "description": "Returns the SmartGrid Status details of the connected device",
+        "operationId": "GetDeviceStatus",
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "query",
+            "description": "Serial number of the connected device",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payload of GetDeviceStatusResponseContract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getDeviceStatusResponseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device with Serial number not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    },
+    "/GetEanCode": {
+      "get": {
+        "tags": [
+          "Power grid EAN code"
+        ],
+        "description": "Returns the EAN code of a power grid connection",
+        "operationId": "GetEanCode",
+        "responses": {
+          "200": {
+            "description": "Payload of GetEanCodeResponseContract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getEanCodeResponseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response when the EAN code of power grid connection could not be found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    },
+    "/GetEnergyConsumption": {
+      "get": {
+        "tags": [
+          "Device Status"
+        ],
+        "description": "Returns the Energy consumption of the connected device",
+        "operationId": "GetEnergyConsumption",
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "query",
+            "description": "Serial number of the connected device",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "The start date of the time range in milliseconds (epoch)",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "The end date of the time range in milliseconds (epoch)",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "description": "Time Interval - Day, Week, Month,Year",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includePreviousPeriod",
+            "in": "query",
+            "description": "Include Previous period for comparison. Previous period is based on time interval",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "refreshCache",
+            "in": "query",
+            "description": "When true the cached tariffs are cleared and re-fetched from Betty Blocks",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payload of GetEnergyConsumptionResponseContract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getEnergyConsumptionResponseContract"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response when the input is wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response when serial number is not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    },
+    "/GetFault": {
+      "get": {
+        "tags": [
+          "Faults"
+        ],
+        "description": "Returns the latest fault of the connected device. \nSerial number for test",
+        "operationId": "GetFault",
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "query",
+            "description": "Serial number of the connected device",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payload of GetFaultResponseContract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getFaultResponseContract"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response when the input is wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response when serial number of the connected device is not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    },
+    "/GetFaultHistory": {
+      "get": {
+        "tags": [
+          "Faults"
+        ],
+        "description": "Returns the latest 8 Faults of the device",
+        "operationId": "GetFaultHistory",
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "query",
+            "description": "Serial number of the connected device",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payload of GetFaultHistoryResponseContract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getFaultHistoryResponseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response when serial number of the connected device is not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    },
+    "/GetSmartGridStatus": {
+      "get": {
+        "tags": [
+          "Device Status"
+        ],
+        "description": "Returns the SmartGrid Status details of the connected device",
+        "operationId": "GetSmartGridStatus",
+        "parameters": [
+          {
+            "name": "serialNumber",
+            "in": "query",
+            "description": "Serial number of the connected device",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payload of GetSmartGridStatusResponseContract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getSmartGridStatusResponseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device with Serial number not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    },
+    "/UpdateDeviceMode": {
+      "post": {
+        "tags": [
+          "DeviceMode"
+        ],
+        "description": "Update Device Mode.\nDeviceMode string values are: \"SmartControl\", \"Schedule\", \"Continuous\", \"Holiday\"\nSchedule contains the day of the week as key (Monday = \"0\", Sunday = \"6\")",
+        "operationId": "UpdateDeviceMode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/deviceModeRequestContract"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Response when the input is wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response when serial number of the connected device is not found or if update is not successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Device Mode is updated successfully"
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    },
+    "/UpdateDevicePVSettings": {
+      "post": {
+        "tags": [
+          "DevicePVSettings"
+        ],
+        "description": "Updates the PV settings of a device",
+        "operationId": "UpdateDevicePVSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/updateDevicePVSettingsRequestContract"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Response when the input is wrong",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response when serial number of the connected device is not found or if update is not successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/responseContract"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Device PV settings are updated successfully"
+          }
+        },
+        "security": [
+          {
+            "user_auth_header": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "boostBoilerRequestContract": {
+        "required": [
+          "activateBoost",
+          "serialNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "activateBoost": {
+            "type": "boolean"
+          },
+          "serialNumber": {
+            "type": "string"
+          }
+        }
+      },
+      "deviceModeContract": {
+        "type": "object",
+        "properties": {
+          "deviceMode": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "type": "integer",
+            "format": "int32",
+            "default": 0
+          },
+          "schedule": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/iDictionary_int32"
+            }
+          },
+          "serialNumber": {
+            "type": "string"
+          },
+          "temperature": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "deviceModeRequestContract": {
+        "required": [
+          "deviceMode",
+          "serialNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "deviceMode": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "type": "integer",
+            "format": "int32",
+            "default": 0
+          },
+          "schedule": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/iDictionary_int32"
+            }
+          },
+          "serialNumber": {
+            "type": "string"
+          },
+          "temperature": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "devicePVSettingsContract": {
+        "type": "object",
+        "properties": {
+          "pvDecisionTimeout": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvFunctionActiveAndP1Data": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvSampleTimeout": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvSetpoint": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvSetpointHysteresis": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvStartLimit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvStopLimit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvSwitchLimit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        }
+      },
+      "deviceStatusContract": {
+        "type": "object",
+        "properties": {
+          "boilerContent": {
+            "type": "number",
+            "format": "double"
+          },
+          "boostActive": {
+            "type": "boolean"
+          },
+          "deviceMode": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "type": "integer",
+            "format": "int32",
+            "default": 0
+          },
+          "devicePowerMeasured": {
+            "type": "number",
+            "format": "double"
+          },
+          "deviceSoftwareVersion": {
+            "type": "string"
+          },
+          "deviceState": {
+            "enum": [
+              "Unknown",
+              "Online",
+              "OnlineCommand",
+              "Sleep",
+              "Offline",
+              "OfflineTimeout",
+              "OfflineCommand",
+              "Connecting"
+            ],
+            "type": "string",
+            "default": "Unknown"
+          },
+          "energyConsumption": {
+            "type": "number",
+            "format": "double"
+          },
+          "energySaving": {
+            "type": "number",
+            "format": "double"
+          },
+          "errorNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "pvPowerConsumption": {
+            "type": "number",
+            "format": "double"
+          },
+          "pvPowerProduction": {
+            "type": "number",
+            "format": "double"
+          },
+          "pvPowerNet": {
+            "type": "number",
+            "format": "double"
+          },
+          "legionellaPreventionTimer": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
+      "energyConsumptionContract": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/energyConsumptionDataContract"
+            }
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "interval": {
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "type": "integer",
+            "format": "int32",
+            "default": 0
+          },
+          "serialNumber": {
+            "type": "string"
+          }
+        }
+      },
+      "energyConsumptionDataContract": {
+        "required": [
+          "timeStamp"
+        ],
+        "type": "object",
+        "properties": {
+          "consumption": {
+            "type": "number",
+            "format": "double"
+          },
+          "consumptionNotDeliveredToNet": {
+            "type": "number",
+            "format": "double"
+          },
+          "costs": {
+            "type": "number",
+            "format": "double"
+          },
+          "previousConsumption": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "previousConsumptionNotDeliveredToNet": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "previousCosts": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "timeStamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "previousTimeStamp": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "pvAverageNetPower": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvActualConPower": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvActualProdPower": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        }
+      },
+      "faultContract": {
+        "required": [
+          "timeStamp"
+        ],
+        "type": "object",
+        "properties": {
+          "duration": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "errorNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "timeStamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "getDeviceModeResponseContract": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "$ref": "#/components/schemas/deviceModeContract"
+          },
+          "message": {
+            "$ref": "#/components/schemas/statusMessageContract"
+          }
+        }
+      },
+      "getDevicePVSettingsResponseContract": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "$ref": "#/components/schemas/devicePVSettingsContract"
+          },
+          "message": {
+            "$ref": "#/components/schemas/statusMessageContract"
+          }
+        }
+      },
+      "getDeviceStatusResponseContract": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "$ref": "#/components/schemas/deviceStatusContract"
+          },
+          "message": {
+            "$ref": "#/components/schemas/statusMessageContract"
+          }
+        }
+      },
+      "getEanCodeResponseContract": {
+        "type": "object",
+        "properties": {
+          "eanCode": {
+            "type": "string"
+          }
+        }
+      },
+      "getEnergyConsumptionResponseContract": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "$ref": "#/components/schemas/energyConsumptionContract"
+          },
+          "message": {
+            "$ref": "#/components/schemas/statusMessageContract"
+          }
+        }
+      },
+      "getFaultHistoryResponseContract": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/faultContract"
+            }
+          },
+          "message": {
+            "$ref": "#/components/schemas/statusMessageContract"
+          }
+        }
+      },
+      "getFaultResponseContract": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "$ref": "#/components/schemas/faultContract"
+          },
+          "message": {
+            "$ref": "#/components/schemas/statusMessageContract"
+          }
+        }
+      },
+      "getSmartGridStatusResponseContract": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/smartGridStatusContract"
+            }
+          },
+          "message": {
+            "$ref": "#/components/schemas/statusMessageContract"
+          }
+        }
+      },
+      "iDictionary_int32": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "responseContract": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "$ref": "#/components/schemas/statusMessageContract"
+          }
+        }
+      },
+      "smartGridStatusContract": {
+        "type": "object",
+        "properties": {
+          "duration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "powerConsumption": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "statusMessageContract": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "businessRule": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "updateDevicePVSettingsRequestContract": {
+        "required": [
+          "serialNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "pvDecisionTimeout": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvFunctionActiveAndP1Data": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvSampleTimeout": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvSetpoint": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvSetpointHysteresis": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvStartLimit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvStopLimit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pvSwitchLimit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "serialNumber": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "user_auth_header": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

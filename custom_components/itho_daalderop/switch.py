@@ -40,10 +40,9 @@ async def async_setup_entry(
 class IthoBoostSwitch(CoordinatorEntity, SwitchEntity):
     """Switch to control boiler boost mode.
 
-    Boost is a capability of both boiler types, but activating it via the
-    API does not work yet: the BoostBoiler endpoint rejects every known
-    payload shape ("BoostBoilerRequestContract" validation error). Turning
-    the switch on will log the API's error; the state readout does work.
+    Boost heats the water once to the boost temperature. Both activation
+    and cancellation are supported via BoostBoiler with activateBoost
+    true/false (verified live).
     """
 
     def __init__(
@@ -66,17 +65,21 @@ class IthoBoostSwitch(CoordinatorEntity, SwitchEntity):
             return self.coordinator.data["device_status"].get("boostActive", False)
         return None
 
+    async def _async_set_boost(self, activate: bool) -> None:
+        """Set boost state and reflect it optimistically."""
+        success = await self.coordinator.api_client.async_boost_boiler(activate)
+        if success and self.coordinator.data and "device_status" in self.coordinator.data:
+            # Boost state propagates on the next poll; show it immediately
+            self.coordinator.data["device_status"]["boostActive"] = activate
+            self.coordinator.async_set_updated_data(self.coordinator.data)
+
     async def async_turn_on(self, **kwargs: Any) -> None:
-        """Turn on boost mode."""
-        await self.coordinator.api_client.async_boost_boiler()
-        await self.coordinator.async_request_refresh()
+        """Activate boost mode."""
+        await self._async_set_boost(True)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        """Turn off boost mode.
-
-        The API has no known way to cancel a boost; it ends on its own
-        when the boiler reaches the boost temperature.
-        """
+        """Cancel boost mode."""
+        await self._async_set_boost(False)
 
 
 class IthoPvEnabledSwitch(CoordinatorEntity, SwitchEntity):

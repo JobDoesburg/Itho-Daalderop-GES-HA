@@ -30,10 +30,6 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
 
 ### Bekende beperkingen
 
-- **Boost werkt momenteel niet** (alle typen): de API weigert de aanroep
-  (`BoostBoilerRequestContract` validatiefout) — het verwachte
-  request-formaat is nog onbekend. Wie het netwerkverkeer van de Climate
-  Connect app kan opvangen (bijv. met mitmproxy) kan dit oplossen.
 - **Modus-wijzigingen zijn *eventually consistent***: de API bevestigt
   direct, maar geeft tot ~30 seconden de oude modus terug. De integratie
   werkt hier omheen met een optimistische update; de boiler zelf volgt
@@ -98,13 +94,19 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
     vakantiemodus van de app is standby met een begin- en einddatum
 
 ### 🔘 Switches
-- **Boost Mode** — snelle opwarming; de status-uitlezing werkt, maar
-  aanzetten via de API werkt nog niet *(zie beperkingen)*
+- **Boost Mode** — eenmalige snelle opwarming; aan- én uitzetten werken
 - **PV Function** — PV-overschot verwarming aan/uit *(alleen VPR)*
 
 ### 🔔 Binary sensors
 - **Boost Active** — of boost actief is (ook als deze via de app is
   gestart); reageert binnen één poll-interval (~2 min)
+
+## API-documentatie
+
+De boilers gebruiken de "Open API for Itho Daalderop CCA". De volledige
+OpenAPI-specificatie is opgehaald van `GET https://wifi-api.id-c.net/api/swagger.json`
+en opgeslagen in [docs/api-openapi.json](docs/api-openapi.json) als
+referentie voor verdere ontwikkeling.
 
 ### 🔢 Numbers *(alleen VPR)*
 - **Temperatuur Instelling** (10–75°C)
@@ -229,8 +231,7 @@ MIT License — zie [LICENSE](LICENSE) voor details.
 ## Bijdragen
 
 Bijdragen zijn welkom! Zie [CONTRIBUTING.md](CONTRIBUTING.md) voor
-richtlijnen. Vooral gezocht: het request-formaat van de Boost-functie
-(netwerkverkeer van de Climate Connect app).
+richtlijnen.
 
 ## Support
 
