@@ -20,7 +20,7 @@ from .const import (
     CONF_ACCESS_TOKEN,
     CONF_SERIAL_NUMBER,
     DOMAIN,
-    MODE_SETTLE_SECONDS,
+    MODE_CONFIRM_TIMEOUT_SECONDS,
     UPDATE_INTERVAL,
     DeviceProfile,
     get_device_profile,
@@ -29,7 +29,6 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [
-    Platform.BINARY_SENSOR,
     Platform.NUMBER,
     Platform.SELECT,
     Platform.SENSOR,
@@ -171,11 +170,12 @@ class IthoDataUpdateCoordinator(DataUpdateCoordinator):
         """Reflect a mode change in local state without re-reading the API.
 
         UpdateDeviceMode is eventually consistent: the POST returns 204
-        immediately, but GetDeviceMode keeps returning the old mode for up
-        to ~30s. Re-reading right after a write reverts the UI to the stale
-        value. Instead, update local state; polls within the settle window
-        keep trusting this value (see _async_update_data), after which the
-        API is authoritative again.
+        immediately, but GetDeviceMode keeps returning the old mode for a
+        while (usually ~30s, sometimes minutes). Re-reading right after a
+        write reverts the UI to the stale value. Instead, update local
+        state; polls keep trusting this value until the API confirms it
+        (see _async_update_data), after which the API is authoritative
+        again.
         """
         self._pending_mode = mode
         self._mode_written_at = time.monotonic()
@@ -244,13 +244,25 @@ class IthoDataUpdateCoordinator(DataUpdateCoordinator):
                 pv_settings = self.data.get("pv_settings", {}) if self.data else {}
                 energy_today = self.data.get("energy_today", {}) if self.data else {}
 
-            # A recently written mode wins over API reads that may still be
-            # stale (a poll can land inside the ~30s propagation window)
+            # A written mode wins over API reads until the API has reported
+            # it back once (propagation is usually ~30s but can take
+            # minutes). While unconfirmed, keep refetching the mode every
+            # poll; give up after a timeout so HA can't mask a genuinely
+            # failed or externally overridden change forever.
             if self._pending_mode is not None:
-                if time.monotonic() - self._mode_written_at < MODE_SETTLE_SECONDS:
+                if should_fetch_settings and device_mode.get("deviceMode") == self._pending_mode:
+                    _LOGGER.debug("Mode change to %s confirmed by API", self._pending_mode)
+                    self._pending_mode = None
+                elif time.monotonic() - self._mode_written_at < MODE_CONFIRM_TIMEOUT_SECONDS:
                     device_status = {**device_status, "deviceMode": self._pending_mode}
                     device_mode = {**device_mode, "deviceMode": self._pending_mode}
+                    self._force_full_refresh = True  # keep checking next poll
                 else:
+                    _LOGGER.warning(
+                        "Mode change to %s was never confirmed by the API; "
+                        "showing the API-reported mode again",
+                        self._pending_mode,
+                    )
                     self._pending_mode = None
 
             return {

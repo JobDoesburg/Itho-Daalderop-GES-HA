@@ -98,11 +98,9 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
     vakantiemodus van de app is standby met een begin- en einddatum
 
 ### 🔘 Switches
+- **Boost Mode** — snelle opwarming; de status-uitlezing werkt, maar
+  aanzetten via de API werkt nog niet *(zie beperkingen)*
 - **PV Function** — PV-overschot verwarming aan/uit *(alleen VPR)*
-
-### 🔔 Binary sensors
-- **Boost Active** — of boost actief is *(alleen-lezen: boost aanzetten
-  kan nog niet, zie beperkingen)*
 
 ### 🔢 Numbers *(alleen VPR)*
 - **Temperatuur Instelling** (10–75°C)
@@ -211,11 +209,10 @@ automation:
 
 ### Entiteiten "niet beschikbaar" na update?
 - Sommige entiteiten zijn vervangen of worden per boilertype niet meer
-  aangemaakt (de Boost- en Vakantie-schakelaars zijn vervangen door de
-  Device Mode select en de Boost Active binary sensor; op GRB vervallen
-  ook de PV- en temperatuurentiteiten). Verwijder de oude entiteiten uit
-  het entiteitenregister, of verwijder de integratie en voeg deze opnieuw
-  toe.
+  aangemaakt (de Vakantie-schakelaar is vervangen door de Device Mode
+  select; op GRB vervallen ook de PV- en temperatuurentiteiten).
+  Verwijder de oude entiteiten uit het entiteitenregister, of verwijder
+  de integratie en voeg deze opnieuw toe.
 
 ### Boiler reageert niet?
 - Controleer of het serienummer correct is (hoofdletters!)

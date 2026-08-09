@@ -21,19 +21,62 @@ async def async_setup_entry(
     """Set up Itho switches.
 
     Note: the operation mode (including standby/holiday) is controlled via
-    the Device Mode select entity. There is no boost switch because the
-    BoostBoiler API endpoint's request format is still unknown; boost state
-    is exposed as a binary sensor instead.
+    the Device Mode select entity.
     """
     coordinator: IthoDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     serial_number = entry.data[CONF_SERIAL_NUMBER]
 
     switches: list[SwitchEntity] = []
 
+    if coordinator.profile.supports_boost:
+        switches.append(IthoBoostSwitch(coordinator, serial_number))
+
     if coordinator.profile.supports_pv:
         switches.append(IthoPvEnabledSwitch(coordinator, serial_number))
 
     async_add_entities(switches)
+
+
+class IthoBoostSwitch(CoordinatorEntity, SwitchEntity):
+    """Switch to control boiler boost mode.
+
+    Boost is a capability of both boiler types, but activating it via the
+    API does not work yet: the BoostBoiler endpoint rejects every known
+    payload shape ("BoostBoilerRequestContract" validation error). Turning
+    the switch on will log the API's error; the state readout does work.
+    """
+
+    def __init__(
+        self, coordinator: IthoDataUpdateCoordinator, serial_number: str
+    ) -> None:
+        """Initialize the switch."""
+        super().__init__(coordinator)
+        self._serial_number = serial_number
+        self._attr_unique_id = f"{serial_number}_boost"
+        self._attr_name = "Boost Mode"
+        self._attr_icon = "mdi:rocket-launch"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, serial_number)},
+        }
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return true if boost is active."""
+        if self.coordinator.data and "device_status" in self.coordinator.data:
+            return self.coordinator.data["device_status"].get("boostActive", False)
+        return None
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn on boost mode."""
+        await self.coordinator.api_client.async_boost_boiler()
+        await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn off boost mode.
+
+        The API has no known way to cancel a boost; it ends on its own
+        when the boiler reaches the boost temperature.
+        """
 
 
 class IthoPvEnabledSwitch(CoordinatorEntity, SwitchEntity):

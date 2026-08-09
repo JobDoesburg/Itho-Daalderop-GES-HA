@@ -43,10 +43,12 @@ MODE_LABELS = {
 }
 MODE_FROM_LABEL = {label: mode for mode, label in MODE_LABELS.items()}
 
-# GetDeviceMode keeps returning the old mode for up to ~30s after an
-# UpdateDeviceMode write. Within this window, polls trust the locally
-# written mode instead of the (possibly stale) API value.
-MODE_SETTLE_SECONDS = 90
+# GetDeviceMode keeps returning the old mode for a while after an
+# UpdateDeviceMode write (usually ~30s, sometimes much longer). A written
+# mode is trusted over API reads until the API reports it back at least
+# once; this is the safety timeout after which the API wins regardless,
+# so HA can't mask a genuinely failed/overridden change forever.
+MODE_CONFIRM_TIMEOUT_SECONDS = 600
 
 
 @dataclass(frozen=True)
@@ -60,10 +62,13 @@ class DeviceProfile:
     model: str
     # Measured water temperature reported in GetDeviceStatus
     supports_temperature: bool = True
-    # UpdateDeviceTemperature endpoint (free setpoint control)
+    # Free setpoint control (written via the UpdateDeviceMode payload)
     supports_temperature_setpoint: bool = True
     # PV/solar function (GetDevicePVSettings / UpdateDevicePVSettings)
     supports_pv: bool = True
+    # Boost function (both types have it; activating it via the API does
+    # not work yet — the BoostBoiler request format is unknown)
+    supports_boost: bool = True
     modes: list[str] = field(default_factory=lambda: list(DEVICE_MODES))
 
 
