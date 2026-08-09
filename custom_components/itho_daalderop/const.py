@@ -44,11 +44,12 @@ MODE_LABELS = {
 MODE_FROM_LABEL = {label: mode for mode, label in MODE_LABELS.items()}
 
 # GetDeviceMode keeps returning the old mode for a while after an
-# UpdateDeviceMode write (usually ~30s, sometimes much longer). A written
-# mode is trusted over API reads until the API reports it back at least
-# once; this is the safety timeout after which the API wins regardless,
-# so HA can't mask a genuinely failed/overridden change forever.
-MODE_CONFIRM_TIMEOUT_SECONDS = 600
+# UpdateDeviceMode write (~30s measured). A written mode is trusted over
+# API reads until the API reports it back at least once — normally on the
+# first poll after the write. This safety timeout (two full poll cycles
+# with margin) is when the API wins regardless, so HA can't mask a
+# genuinely failed/overridden change for long.
+MODE_CONFIRM_TIMEOUT_SECONDS = 300
 
 
 @dataclass(frozen=True)
