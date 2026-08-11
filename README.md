@@ -98,7 +98,8 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
     vakantiemodus van de app is standby met een begin- en einddatum
 
 ### 🔘 Switches
-- **Boost Mode** — eenmalige snelle opwarming; aan- én uitzetten werken
+- **Boost Mode** — eenmalige snelle opwarming; aan- én uitzetten werken.
+  Weerspiegelt ook boost die via de app is gestart (binnen ~2 min)
 - **PV Function** — PV-overschot verwarming aan/uit *(alleen VPR)*
 
 ### 🔢 Numbers *(alleen VPR)*
@@ -106,10 +107,6 @@ output — daarmee kan het profiel voor jouw type verfijnd worden.
 - **PV Start Limit** (0–10 kW) — start boiler boven dit PV-overschot
 - **PV Stop Limit** (0–10 kW) — stop boiler onder deze limiet
 - **PV Target Temperature** (40–90°C) — doeltemperatuur voor PV-modus
-
-### 🔔 Binary sensors
-- **Boost Active** — of boost actief is (ook als deze via de app is
-  gestart); reageert binnen één poll-interval (~2 min)
 
 ### 📊 Sensors
 
